@@ -1,0 +1,114 @@
+/* Style CSS Simple - Projet Interopérabilité */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f4f4f4;
+}
+
+header {
+    background-color: #2c3e50;
+    color: white;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+header h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.subtitle {
+    font-size: 1rem;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+section {
+    background: white;
+    margin-bottom: 1.5rem;
+    padding: 1.5rem;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+section h2 {
+    color: #2c3e50;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #3498db;
+}
+
+/* Section Localisation */
+.location-info {
+    line-height: 1.8;
+}
+
+.location-info p {
+    margin-bottom: 0.5rem;
+}
+
+/* APIs et Git */
+section ul {
+    list-style: none;
+}
+
+section ul li {
+    background: #f8f9fa;
+    padding: 0.8rem;
+    margin: 0.5rem 0;
+    border-radius: 3px;
+    border-left: 3px solid #3498db;
+}
+
+section ul li a {
+    color: #3498db;
+    text-decoration: none;
+    word-break: break-all;
+}
+
+section ul li a:hover {
+    text-decoration: underline;
+}
+
+footer {
+    background: #2c3e50;
+    color: white;
+    text-align: center;
+    padding: 1.5rem;
+    margin-top: 2rem;
+}
+
+footer a {
+    color: white;
+    text-decoration: underline;
+}
+
+footer a:hover {
+    color: #ccc;
+}
+
+/* Media Queries Responsive */
+@media (max-width: 768px) {
+    header h1 { font-size: 1.5rem; }
+    .subtitle { font-size: 0.9rem; }
+    .container { padding: 0 0.5rem; }
+    section { padding: 1rem; }
+    section h2 { font-size: 1.3rem; }
+}
+
+@media (max-width: 480px) {
+    header h1 { font-size: 1.3rem; }
+    section h2 { font-size: 1.2rem; }
+}
