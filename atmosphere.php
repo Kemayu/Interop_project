@@ -101,9 +101,160 @@ function geolocateIP($ip, &$api_urls) {
     );
 }
 
+// Récupérer les données météo avec Open-Meteo API
+function getWeatherData($lat, $lon, &$api_urls) {
+    global $context;
+    
+    // Utiliser Open-Meteo API (JSON) puis convertir en XML
+    $url = "https://api.open-meteo.com/v1/forecast?latitude={$lat}&longitude={$lon}&hourly=temperature_2m,precipitation,windspeed_10m&timezone=Europe/Paris&forecast_days=1";
+    $api_urls['meteo'] = $url;
+    
+    try {
+        $json_string = @file_get_contents($url, false, $context);
+        if ($json_string !== false) {
+            $data = json_decode($json_string, true);
+            
+            // Créer un XML depuis les données JSON
+            $xml = new SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><weather></weather>');
+            $xml->addChild('location', $data['latitude'] . ',' . $data['longitude']);
+            $xml->addChild('date', date('Y-m-d'));
+            
+            // Extraire les données pour matin, midi, soir
+            $times = array(
+                'morning' => 8,   // 8h
+                'afternoon' => 14, // 14h
+                'evening' => 20    // 20h
+            );
+            
+            foreach ($times as $period => $hour) {
+                $periodNode = $xml->addChild('period');
+                $periodNode->addAttribute('type', $period);
+                $periodNode->addChild('temperature', round($data['hourly']['temperature_2m'][$hour], 1));
+                $periodNode->addChild('precipitation', round($data['hourly']['precipitation'][$hour], 1));
+                $periodNode->addChild('wind', round($data['hourly']['windspeed_10m'][$hour], 1));
+                
+                // Ajouter une condition textuelle
+                $temp = $data['hourly']['temperature_2m'][$hour];
+                $precip = $data['hourly']['precipitation'][$hour];
+                $condition = "";
+                if ($precip > 5) {
+                    $condition = "Pluvieux";
+                } elseif ($precip > 0) {
+                    $condition = "Quelques averses";
+                } elseif ($temp < 10) {
+                    $condition = "Frais";
+                } else {
+                    $condition = "Dégagé";
+                }
+                $periodNode->addChild('condition', $condition);
+            }
+            
+            return $xml->asXML();
+        }
+    } catch (Exception $e) {
+    }
+    
+    return null;
+}
+
+// Transformer XML météo avec XSL
+function transformWeatherXML($xmlString) {
+    // Vérifier si l'extension XSL est disponible
+    if (!class_exists('XSLTProcessor')) {
+        return generateWeatherHTMLFallback($xmlString);
+    }
+    
+    try {
+        $xml = new DOMDocument();
+        $xml->loadXML($xmlString);
+        
+        $xsl = new DOMDocument();
+        $xsl->load('meteo.xsl');
+        
+        $proc = new XSLTProcessor();
+        $proc->importStyleSheet($xsl);
+        
+        return $proc->transformToXML($xml);
+    } catch (Exception $e) {
+        return generateWeatherHTMLFallback($xmlString);
+    }
+}
+
+// Générer HTML météo sans XSL (fallback)
+function generateWeatherHTMLFallback($xmlString) {
+    try {
+        $xml = simplexml_load_string($xmlString);
+        
+        $html = '<div class="meteo-container">';
+        $html .= '<h2>Météo du jour</h2>';
+        $html .= '<div class="meteo-periods">';
+        
+        if (isset($xml->period)) {
+            $periods_fr = array(
+                'morning' => 'Matin',
+                'afternoon' => 'Après-midi',
+                'evening' => 'Soir'
+            );
+            
+            foreach ($xml->period as $period) {
+                $type = (string)$period['type'];
+                $temp = (float)$period->temperature;
+                $precip = (float)$period->precipitation;
+                $wind = (float)$period->wind;
+                $condition = (string)$period->condition;
+                
+                $html .= "<div class='period'>";
+                $html .= "<h3>" . ($periods_fr[$type] ?? ucfirst($type)) . "</h3>";
+                $html .= "<div class='weather-info'><span class='label'>Température:</span> <span class='value'>" . round($temp) . "°C</span></div>";
+                $html .= "<div class='weather-info'><span class='label'>Précipitations:</span> <span class='value'>" . round($precip, 1) . " mm</span></div>";
+                $html .= "<div class='weather-info'><span class='label'>Vent:</span> <span class='value'>" . round($wind) . " km/h</span></div>";
+                $html .= "<div class='weather-info'><span class='label'>Conditions:</span> <span class='value'>$condition</span></div>";
+                $html .= "</div>";
+            }
+        }
+        
+        $html .= '</div>';
+        
+        // Alertes
+        $html .= '<div class="meteo-summary"><div class="summary-alerts">';
+        $has_alert = false;
+        if (isset($xml->period)) {
+            foreach ($xml->period as $period) {
+                $temp = (float)$period->temperature;
+                $precip = (float)$period->precipitation;
+                $wind = (float)$period->wind;
+                
+                if ($temp < 5 && !$has_alert) {
+                    $html .= "<div class='alert alert-cold'>Températures basses prévues</div>";
+                    $has_alert = true;
+                }
+                if ($precip > 5 && !$has_alert) {
+                    $html .= "<div class='alert alert-rain'>Prévoyez un parapluie</div>";
+                    $has_alert = true;
+                }
+                if ($wind > 40 && !$has_alert) {
+                    $html .= "<div class='alert alert-wind'>Vent fort prévu</div>";
+                    $has_alert = true;
+                }
+            }
+        }
+        if (!$has_alert) {
+            $html .= "<div class='alert alert-good'>Conditions météo favorables</div>";
+        }
+        $html .= '</div></div>';
+        
+        $html .= '</div>';
+        return $html;
+    } catch (Exception $e) {
+        return "<div class='meteo-container'><h2>Météo du jour</h2><p>Erreur lors du chargement des données météo.</p></div>";
+    }
+}
+
 // Récupération des données
 $client_ip = getClientIP();
 $location = geolocateIP($client_ip, $api_urls);
+$weather_xml = getWeatherData($location['lat'], $location['lon'], $api_urls);
+$weather_html = $weather_xml ? transformWeatherXML($weather_xml) : null;
 
 ?>
 <!DOCTYPE html>
@@ -133,6 +284,13 @@ $location = geolocateIP($client_ip, $api_urls);
                 <p><strong>Coordonnées GPS :</strong> <?php echo htmlspecialchars($location['lat']); ?>, <?php echo htmlspecialchars($location['lon']); ?></p>
             </div>
         </section>
+
+        <!-- Section Météo -->
+        <?php if ($weather_html): ?>
+        <section>
+            <?php echo $weather_html; ?>
+        </section>
+        <?php endif; ?>
 
         <!-- APIs utilisées -->
         <section>

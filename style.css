@@ -59,6 +59,72 @@ section h2 {
     margin-bottom: 0.5rem;
 }
 
+/* Météo */
+.meteo-container h2 {
+    color: #2c3e50;
+}
+
+.meteo-periods {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.period {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 5px;
+    border-left: 3px solid #3498db;
+}
+
+.period h3 {
+    margin-bottom: 0.5rem;
+    color: #2c3e50;
+}
+
+.weather-info {
+    margin: 0.5rem 0;
+    padding: 0.3rem;
+}
+
+.weather-info .label {
+    font-weight: bold;
+}
+
+.weather-info .weather-icon {
+    margin: 0 0.5rem;
+}
+
+.meteo-summary {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 5px;
+}
+
+.meteo-summary h3 {
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.summary-alerts {
+    margin-top: 0.5rem;
+}
+
+.alert {
+    padding: 0.8rem;
+    margin: 0.5rem 0;
+    border-radius: 3px;
+    border-left: 3px solid;
+}
+
+.alert-cold { background: #e3f2fd; border-color: #2196f3; }
+.alert-rain { background: #e1f5fe; border-color: #03a9f4; }
+.alert-snow { background: #f3e5f5; border-color: #9c27b0; }
+.alert-wind { background: #fff3e0; border-color: #ff9800; }
+.alert-good { background: #e8f5e9; border-color: #4caf50; }
+
 /* APIs et Git */
 section ul {
     list-style: none;
@@ -106,6 +172,7 @@ footer a:hover {
     .container { padding: 0 0.5rem; }
     section { padding: 1rem; }
     section h2 { font-size: 1.3rem; }
+    .meteo-periods { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 480px) {
